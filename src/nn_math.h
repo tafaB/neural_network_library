@@ -11,7 +11,9 @@ typedef struct {
 
 MAT mat_alloc(size_t number_of_rows, size_t number_of_cols);
 void mat_free(MAT matrix);
-MAT mat_copy(const MAT matrix);
+
+void mat_copy(MAT copy, const MAT target);
+MAT mat_copy_alloc(const MAT matrix);
 
 void mat_print(const MAT matrix, const char* name);
 

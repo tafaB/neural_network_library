@@ -18,7 +18,16 @@ MAT mat_alloc(size_t number_of_rows, size_t number_of_cols) {
     return result;
 }
 
-MAT mat_copy(const MAT matrix) {
+void mat_copy(MAT copy, const MAT target) {
+    assert(copy.rows == target.rows && copy.cols == target.cols);
+    for (size_t i = 0; i<target.rows; i++) {
+        for(size_t j = 0; j<target.cols; j++) {
+            MAT_AT(copy, i, j) = MAT_AT(target, i, j);
+        }
+    }
+}
+
+MAT mat_copy_alloc(const MAT matrix) {
     MAT copy = mat_alloc(matrix.rows, matrix.cols);
     if (matrix.elems == NULL) {
         copy.elems = NULL;
@@ -36,6 +45,8 @@ void mat_free(MAT matrix) {
     if(matrix.elems==NULL) return;
     // void free( void *ptr );
     free(matrix.elems);
+    matrix.rows = 0;
+    matrix.cols = 0;
 }
 
 void mat_print(const MAT matrix, const char* name) {

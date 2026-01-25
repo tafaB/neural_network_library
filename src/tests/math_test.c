@@ -74,7 +74,7 @@ int main(void) {
     mat_free(b);
     test_count++;
 
-    results[test_count].name = "mat_copy deep copy";
+    results[test_count].name = "mat_copy_alloc deep copy";
     MAT original = mat_alloc(2, 3);
     float vals[] = {
         1.0f,  2.0f,  3.0f,
@@ -83,7 +83,7 @@ int main(void) {
     for (size_t i = 0; i < 6; i++) {
         original.elems[i] = vals[i];
     }
-    MAT original_copy = mat_copy(original);
+    MAT original_copy = mat_copy_alloc(original);
     int ok =
         original_copy.rows == original.rows &&
         original_copy.cols == original.cols &&
@@ -98,10 +98,10 @@ int main(void) {
     mat_free(original_copy);
     test_count++;
 
-    results[test_count].name = "mat_copy independence";
+    results[test_count].name = "mat_copy_alloc independence";
     MAT original_1 = mat_alloc(2, 2);
     mat_fill_value(original_1, 1.0f);
-    MAT original_1_copy = mat_copy(original_1);
+    MAT original_1_copy = mat_copy_alloc(original_1);
     original_1.elems[0] = 99.0f;
     results[test_count].passed = (original_1_copy.elems[0] == 1.0f);
     mat_free(original_1);
@@ -222,7 +222,7 @@ int main(void) {
     results[test_count].passed = (a1 < b1 && b1 < c1);
     test_count++;
 
-    printf("\n==================== TEST RESULTS ====================\n");
+    printf("\n==================== MATH TEST RESULTS ====================\n");
     int passed_count = 0;
     int failed_count = 0;
     for (int i = 0; i < test_count; i++) {
