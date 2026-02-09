@@ -24,25 +24,30 @@ NN nn_alloc(const size_t *architecture, const size_t arch_len) {
     return neural_network;
 }
 
+NN nn_alloc_like(NN source) {
+    size_t arch_len = source.number_of_layers + 1;
+    size_t arch[arch_len];
+    for (size_t i = 0; i < arch_len; i++) {
+        arch[i] = source.activations[i].rows;
+    }
+    return nn_alloc(arch, arch_len);
+}
+
 void nn_free(NN neural_network) {
-    if (neural_network.weights != NULL) {
-        for (size_t i = 0; i < neural_network.number_of_layers; i++) {
-            mat_free(neural_network.weights[i]);
-        }
-        free(neural_network.weights);
+    if (neural_network.weights == NULL) return;
+    for (size_t i = 0; i < neural_network.number_of_layers; i++) {
+        mat_free(neural_network.weights[i]);
+        mat_free(neural_network.biases[i]);
     }
-    if (neural_network.biases != NULL) {
-        for (size_t i = 0; i < neural_network.number_of_layers; i++) {
-            mat_free(neural_network.biases[i]);
-        }
-        free(neural_network.biases);
+    for (size_t i = 0; i <= neural_network.number_of_layers; i++) {
+        mat_free(neural_network.activations[i]);
     }
-    if (neural_network.activations != NULL) {
-        for (size_t i = 0; i <= neural_network.number_of_layers; i++) {
-            mat_free(neural_network.activations[i]);
-        }
-        free(neural_network.activations);
-    }
+    free(neural_network.weights);
+    free(neural_network.biases);
+    free(neural_network.activations);
+    neural_network.weights = NULL;
+    neural_network.biases = NULL;
+    neural_network.activations = NULL;
     neural_network.number_of_layers = 0;
 }
 
@@ -63,10 +68,17 @@ void nn_print(const NN neural_network, const char* name) {
     }
 }
 
-void nn_rand(NN neural_network) {
+void nn_fill_rand(NN neural_network) {
     for (size_t i = 0; i < neural_network.number_of_layers; i++) {
         mat_fill_rand(neural_network.weights[i]);
         mat_fill_rand(neural_network.biases[i]);
+    }
+}
+
+void nn_fill_value(NN neural_network, float value) {
+    for (size_t i = 0; i < neural_network.number_of_layers; i++) {
+        mat_fill_value(neural_network.weights[i], value);
+        mat_fill_value(neural_network.biases[i], value);
     }
 }
 
@@ -80,4 +92,91 @@ void nn_forward(NN neural_network) {
         mat_free(output_prim);
         mat_free(output);
     }
+}
+
+void nn_shuffle_training_data(MAT training_data_input, MAT training_data_output) {
+    assert(training_data_input.cols == training_data_output.cols);
+    if (training_data_input.elems == NULL || training_data_input.cols < 2) return;
+
+    for (size_t j = training_data_input.cols - 1; j > 0; j--) {
+        size_t k = rand() % (j + 1);
+        if (k == j) continue;
+        for (size_t i = 0; i < training_data_input.rows; i++) {
+            float t = MAT_AT(training_data_input, i, k);
+            MAT_AT(training_data_input, i, k) = MAT_AT(training_data_input, i, j);
+            MAT_AT(training_data_input, i, j) = t;
+        }
+        for (size_t i = 0; i < training_data_output.rows; i++) {
+            float t = MAT_AT(training_data_output, i, k);
+            MAT_AT(training_data_output, i, k) = MAT_AT(training_data_output, i, j);
+            MAT_AT(training_data_output, i, j) = t;
+        }
+    }
+}
+
+void nn_accumulate_gradients(NN gradients_dest, NN gradients_src) {
+    assert(gradients_dest.number_of_layers == gradients_src.number_of_layers);
+    for (size_t i = 0; i < gradients_dest.number_of_layers; i++) {
+        mat_add_no_alloc(gradients_dest.weights[i], gradients_src.weights[i]);
+        mat_add_no_alloc(gradients_dest.biases[i], gradients_src.biases[i]);
+    }
+}
+
+void nn_scale_gradients(NN gradients, float factor) {
+    for (size_t i = 0; i < gradients.number_of_layers; i++) {
+        mat_hadamard_product_constant(gradients.weights[i], factor);
+        mat_hadamard_product_constant(gradients.biases[i], factor);
+    }
+}
+
+void nn_update_parameters(NN neural_network, NN gradients, float learning_rate) {
+    for (size_t i = 0; i < neural_network.number_of_layers; i++) {
+        mat_hadamard_product_constant(gradients.weights[i], -learning_rate);
+        mat_add_no_alloc(neural_network.weights[i], gradients.weights[i]);
+        mat_hadamard_product_constant(gradients.biases[i], -learning_rate);
+        mat_add_no_alloc(neural_network.biases[i], gradients.biases[i]);
+    }
+}
+
+void nn_train(
+        NN neural_network, // the final network will be displayed here after the end of the training process
+        MAT training_data_input,
+        MAT training_data_output,
+        size_t epoch_size,
+        size_t batch_size,
+        float learning_rate
+) {
+    NN batch_gradients = nn_alloc_like(neural_network);
+    NN gradients = nn_alloc_like(neural_network);
+    for(size_t epoch = 0; epoch < epoch_size; epoch++) { // how many time would you like the training process to last
+        nn_shuffle_training_data(training_data_input, training_data_output); //shuffle the training data set for each iteration
+        for(size_t batch_start=0; batch_start<training_data_input.cols; batch_start+=batch_size) { //check by batches based on the provided size
+            size_t batch_end = (batch_start + batch_size > training_data_input.cols) ? training_data_input.cols : batch_start + batch_size;
+            size_t actual_batch_size = batch_end - batch_start;
+            nn_fill_value(batch_gradients, 0); // reset every bais and weight to zero
+            for(size_t batch_it = 0; batch_it<actual_batch_size; batch_it++) { //go throught the training data in the batch
+                size_t batch_index = batch_start + batch_it;
+                mat_copy_col(NN_INPUT(neural_network), training_data_input, batch_index);
+                nn_forward(neural_network);
+                nn_backward(neural_network, gradients, training_data_output, batch_index);
+                nn_accumulate_gradients(batch_gradients, gradients); // add the gradient found for each batch
+            }
+            nn_scale_gradients(batch_gradients, 1.0f / (float)actual_batch_size); //find the average of the gradients of the batch
+            nn_update_parameters(neural_network, batch_gradients, learning_rate); //udpate the neural network based on this batch
+        } // continue with the next batch
+    }
+    nn_free(batch_gradients);
+    nn_free(gradients);
+}
+
+void nn_backward(
+        NN neural_network,
+        NN gradients_out,
+        MAT expected_output,
+        size_t expected_output_index
+) {
+    (void)neural_network;
+    (void)expected_output;
+    (void)gradients_out;
+    (void)expected_output_index;
 }

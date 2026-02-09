@@ -14,14 +14,22 @@ void mat_free(MAT matrix);
 
 void mat_copy(MAT copy, const MAT target);
 MAT mat_copy_alloc(const MAT matrix);
+void mat_copy_col(MAT dest, const MAT src, size_t col_index);
 
 void mat_print(const MAT matrix, const char* name);
+
+void mat_shuffle_cols(MAT matrix);
 
 void mat_fill_value(MAT matrix, float value);
 void mat_fill_rand(MAT matrix);
 
 MAT mat_multiply(const MAT a, const MAT b);
+MAT mat_hadamard_product(const MAT a, const MAT b);
+void mat_hadamard_product_constant(MAT matrix, float value);
 MAT mat_add(const MAT a, const MAT b);
+void mat_add_no_alloc(MAT a, const MAT b);
+
+MAT mat_sub(const MAT matrix, size_t start_x, size_t start_y, size_t end_x, size_t end_y);
 
 void mat_sigmoid(MAT matrix);
 

@@ -222,6 +222,134 @@ int main(void) {
     results[test_count].passed = (a1 < b1 && b1 < c1);
     test_count++;
 
+    results[test_count].name = "mat_sub basic extraction";
+    MAT full = mat_alloc(4, 4);
+    for (size_t i = 0; i < 16; i++) full.elems[i] = (float)i;
+    MAT sub = mat_sub(full, 1, 1, 2, 2);
+    int sub_ok = (sub.rows == 2 && sub.cols == 2);
+    if (sub_ok) {
+        sub_ok = (MAT_AT(sub, 0, 0) == 5.0f && 
+                  MAT_AT(sub, 0, 1) == 6.0f &&
+                  MAT_AT(sub, 1, 0) == 9.0f && 
+                  MAT_AT(sub, 1, 1) == 10.0f);
+    }
+    results[test_count].passed = sub_ok;
+    mat_free(full);
+    mat_free(sub);
+    test_count++;
+    results[test_count].name = "mat_sub 1x1 extraction";
+    MAT full2 = mat_alloc(3, 3);
+    mat_fill_value(full2, 42.0f);
+    MAT sub_single = mat_sub(full2, 1, 1, 1, 1);
+    results[test_count].passed = (sub_single.rows == 1 && 
+                                  sub_single.cols == 1 && 
+                                  sub_single.elems[0] == 42.0f);
+    mat_free(full2);
+    mat_free(sub_single);
+    test_count++;
+    results[test_count].name = "mat_sub independence (deep copy)";
+    MAT full3 = mat_alloc(3, 3);
+    mat_fill_value(full3, 0.0f);
+    MAT sub_copy = mat_sub(full3, 0, 0, 1, 1);
+    MAT_AT(sub_copy, 0, 0) = 5.0f;
+    results[test_count].passed = (MAT_AT(full3, 0, 0) == 0.0f);
+    mat_free(full3);
+    mat_free(sub_copy);
+    test_count++;
+
+    results[test_count].name = "mat_hadamard_product 2x2";
+    MAT ha = mat_alloc(2, 2);
+    MAT hb = mat_alloc(2, 2);
+    float ha_vals[] = {1, 2, 3, 4};
+    float hb_vals[] = {5, 6, 7, 8};
+    for (size_t i = 0; i < 4; i++) {
+        ha.elems[i] = ha_vals[i];
+        hb.elems[i] = hb_vals[i];
+    }
+    MAT h_res = mat_hadamard_product(ha, hb);
+    results[test_count].passed = 
+        (MAT_AT(h_res, 0, 0) == 5.0f && 
+         MAT_AT(h_res, 0, 1) == 12.0f &&
+         MAT_AT(h_res, 1, 0) == 21.0f && 
+         MAT_AT(h_res, 1, 1) == 32.0f);
+    mat_free(ha);
+    mat_free(hb);
+    mat_free(h_res);
+    test_count++;
+
+    results[test_count].name = "mat_hadamard_product identity";
+    MAT h_data = mat_alloc(3, 3);
+    MAT h_ones = mat_alloc(3, 3);
+    mat_fill_rand(h_data);
+    mat_fill_value(h_ones, 1.0f);
+    MAT h_id_res = mat_hadamard_product(h_data, h_ones);
+    int h_id_ok = 1;
+    for (size_t i = 0; i < 9; i++) {
+        if (!FLOAT_EQ(h_id_res.elems[i], h_data.elems[i], 1e-6f)) {
+            h_id_ok = 0;
+            break;
+        }
+    }
+    results[test_count].passed = h_id_ok;
+    mat_free(h_data);
+    mat_free(h_ones);
+    mat_free(h_id_res);
+    test_count++;
+
+    results[test_count].name = "mat_hadamard_product by zeros";
+    MAT h_rand = mat_alloc(2, 5);
+    MAT h_zeros = mat_alloc(2, 5);
+    mat_fill_rand(h_rand);
+    mat_fill_value(h_zeros, 0.0f);
+    MAT h_zero_res = mat_hadamard_product(h_rand, h_zeros);
+    int h_zero_ok = 1;
+    for (size_t i = 0; i < 10; i++) {
+        if (h_zero_res.elems[i] != 0.0f) {
+            h_zero_ok = 0;
+            break;
+        }
+    }
+    results[test_count].passed = h_zero_ok;
+    mat_free(h_rand);
+    mat_free(h_zeros);
+    mat_free(h_zero_res);
+    test_count++;
+
+    results[test_count].name = "mat_shuffle_cols content integrity";
+    MAT m_shuf = mat_alloc(2, 10);
+    for (size_t j = 0; j < 10; j++) {
+        MAT_AT(m_shuf, 0, j) = (float)j;
+        MAT_AT(m_shuf, 1, j) = (float)(j + 10);
+    }
+    mat_shuffle_cols(m_shuf);
+    int integrity_ok = 1;
+    for (size_t j = 0; j < 10; j++) {
+        float val_top = MAT_AT(m_shuf, 0, j);
+        float val_bot = MAT_AT(m_shuf, 1, j);
+        if (!FLOAT_EQ(val_bot, val_top + 10.0f, 1e-6f)) {
+            integrity_ok = 0;
+            break;
+        }
+    }
+    results[test_count].passed = integrity_ok;
+    mat_free(m_shuf);
+    test_count++;
+
+    results[test_count].name = "mat_shuffle_cols actually shuffles";
+    MAT m_rand = mat_alloc(1, 100);
+    for (size_t j = 0; j < 100; j++) MAT_AT(m_rand, 0, j) = (float)j;
+    mat_shuffle_cols(m_rand);
+    int changed = 0;
+    for (size_t j = 0; j < 100; j++) {
+        if (MAT_AT(m_rand, 0, j) != (float)j) {
+            changed = 1;
+            break;
+        }
+    }
+    results[test_count].passed = changed;
+    mat_free(m_rand);
+    test_count++;
+
     printf("\n==================== MATH TEST RESULTS ====================\n");
     int passed_count = 0;
     int failed_count = 0;
