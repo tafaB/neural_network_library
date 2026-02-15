@@ -43,8 +43,11 @@ MAT mat_copy_alloc(const MAT matrix) {
 
 void mat_copy_col(MAT dest, const MAT src, size_t col_index) {
     assert(dest.rows == src.rows);
-    for (size_t i = 0; i<src.rows; i++) {
-        MAT_AT(dest, i, col_index) = MAT_AT(src, i, col_index);
+    assert(dest.cols == 1);
+    assert(col_index < src.cols);
+
+    for (size_t i = 0; i < src.rows; i++) {
+        MAT_AT(dest, i, 0) = MAT_AT(src, i, col_index);
     }
 }
 
@@ -126,6 +129,16 @@ MAT mat_hadamard_product(const MAT a, const MAT b) {
         }
     }
     return result;
+}
+
+void mat_hadamard_product_no_alloc(MAT a, const MAT b) {
+    assert(a.rows == b.rows);
+    assert(a.cols == b.cols);
+    for (size_t i = 0; i<a.rows; i++) {
+        for(size_t j = 0; j<a.cols; j++) {
+            MAT_AT(a, i, j) *= MAT_AT(b,i,j);
+        }
+    }
 }
 
 

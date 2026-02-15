@@ -9,7 +9,7 @@ typedef struct {
     size_t number_of_layers; // this does not include input layer
     MAT *weights;
     MAT *biases;
-    MAT *activations;
+    MAT *activations; // 0 -> input
 } NN;
 
 NN nn_alloc(const size_t *architecture, const size_t arch_len);

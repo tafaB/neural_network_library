@@ -25,6 +25,7 @@ void mat_fill_rand(MAT matrix);
 
 MAT mat_multiply(const MAT a, const MAT b);
 MAT mat_hadamard_product(const MAT a, const MAT b);
+void mat_hadamard_product_no_alloc(MAT a, const MAT b);
 void mat_hadamard_product_constant(MAT matrix, float value);
 MAT mat_add(const MAT a, const MAT b);
 void mat_add_no_alloc(MAT a, const MAT b);
