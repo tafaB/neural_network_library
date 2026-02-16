@@ -145,7 +145,7 @@ void mat_hadamard_product_no_alloc(MAT a, const MAT b) {
 void mat_hadamard_product_constant(MAT matrix, float value) {
     for(size_t i=0; i<matrix.rows; i++) {
         for(size_t j=0; j<matrix.cols; j++) {
-            MAT_AT(matrix,i,j) = value;
+            MAT_AT(matrix,i,j) *= value;
         }
     }
 }
@@ -198,6 +198,10 @@ float sigmoid_function(float input) {
     return 1.0f / ( 1.0f + expf(-input));
 }
 
+/* float rand_float(){ */
+/*     return (float) rand() / (float) RAND_MAX; */
+/* } */
 float rand_float() {
-    return (float) rand() / (float) RAND_MAX;
+    // Returns a float between -1.0 and 1.0
+    return ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
 }

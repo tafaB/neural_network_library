@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include "nn_math.h"
 #include "nn_methods.h"
 
@@ -31,6 +32,14 @@ NN nn_alloc_like(NN source) {
         arch[i] = source.activations[i].rows;
     }
     return nn_alloc(arch, arch_len);
+}
+
+void nn_copy(NN dst, const NN src) {
+    assert(dst.number_of_layers == src.number_of_layers);
+    for (size_t i = 0; i < src.number_of_layers; i++) {
+        mat_copy(dst.weights[i], src.weights[i]);
+        mat_copy(dst.biases[i], src.biases[i]);
+    }
 }
 
 void nn_free(NN neural_network) {
@@ -68,10 +77,28 @@ void nn_print(const NN neural_network, const char* name) {
     }
 }
 
+/* void nn_fill_rand(NN neural_network) { */
+/*     for (size_t i = 0; i < neural_network.number_of_layers; i++) { */
+/*         mat_fill_rand(neural_network.weights[i]); */
+/*         mat_fill_rand(neural_network.biases[i]); */
+/*     } */
+/*     for (size_t i = 0; i <= neural_network.number_of_layers; i++) { */
+/*         mat_fill_rand(neural_network.activations[i]); */
+/*     } */
+/* } */
+
 void nn_fill_rand(NN neural_network) {
     for (size_t i = 0; i < neural_network.number_of_layers; i++) {
-        mat_fill_rand(neural_network.weights[i]);
-        mat_fill_rand(neural_network.biases[i]);
+        // Xavier/Glorot Initialization: 1 / sqrt(input_neurons)
+        float range = sqrtf(1.0f / (float)neural_network.weights[i].cols);
+        
+        for (size_t r = 0; r < neural_network.weights[i].rows; r++) {
+            for (size_t c = 0; c < neural_network.weights[i].cols; c++) {
+                MAT_AT(neural_network.weights[i], r, c) = (rand_float() * range);
+            }
+        }
+        // Biases can stay 0 or small random
+        mat_fill_value(neural_network.biases[i], 0.01f);
     }
 }
 
@@ -79,6 +106,9 @@ void nn_fill_value(NN neural_network, float value) {
     for (size_t i = 0; i < neural_network.number_of_layers; i++) {
         mat_fill_value(neural_network.weights[i], value);
         mat_fill_value(neural_network.biases[i], value);
+    }
+    for (size_t i = 0; i <= neural_network.number_of_layers; i++) {
+        mat_fill_value(neural_network.activations[i],value);
     }
 }
 
@@ -138,6 +168,24 @@ void nn_update_parameters(NN neural_network, NN gradients, float learning_rate) 
     }
 }
 
+float nn_loss(NN neural_network, MAT training_data_input, MAT training_data_output) {
+    assert(training_data_input.cols == training_data_output.cols);
+    size_t n = training_data_input.cols;
+    float total_loss = 0.0f;
+
+    for(size_t i = 0; i < n; i++) {
+        mat_copy_col(NN_INPUT(neural_network), training_data_input, i);
+        nn_forward(neural_network);
+        
+        MAT out = NN_OUTPUT(neural_network);
+        for(size_t j = 0; j < out.rows; j++) {
+            float diff = MAT_AT(out, j, 0) - MAT_AT(training_data_output, j, i);
+            total_loss += diff * diff;
+        }
+    }
+    return total_loss / (float)n;
+}
+
 void nn_train(
         NN neural_network, // the final network will be displayed here after the end of the training process
         MAT training_data_input,
@@ -146,35 +194,34 @@ void nn_train(
         size_t batch_size,
         float learning_rate
 ) {
-    printf("Training samples: %zu\n", training_data_input.cols);
     NN batch_gradients = nn_alloc_like(neural_network);
     NN gradients = nn_alloc_like(neural_network);
     for(size_t epoch = 0; epoch < epoch_size; epoch++) { // how many time would you like the training process to last
         nn_shuffle_training_data(training_data_input, training_data_output); //shuffle the training data set for each iteration
         for(size_t batch_start=0; batch_start<training_data_input.cols; batch_start+=batch_size) { //check by batches based on the provided size
             size_t batch_end = batch_start + (batch_size - 1);
-
             if (batch_end >= training_data_input.cols) {
                 batch_end = training_data_input.cols - 1;
             }
             size_t actual_batch_size = batch_end - batch_start + 1;
             nn_fill_value(batch_gradients, 0); // reset every bais and weight to zero
-            nn_fill_value(gradients, 0);
-            printf("batch start = %d, batch_end = %d\n", batch_start, batch_end);
-            for(int i=0; i<gradients.number_of_layers; i++) {
-                if(gradients.weights[i].rows == 0) {
-                    printf("ERROR before loop %d\n",batch_start);
-                }
-            }
             for(size_t batch_index = batch_start; batch_index<=batch_end; batch_index++) { //go throught the training data in the batch
                 mat_copy_col(NN_INPUT(neural_network), training_data_input, batch_index);
                 nn_forward(neural_network);
+
+                //loss ---
+
+                //--------
+
+                nn_fill_value(gradients, 0);
                 nn_backward(neural_network, gradients, training_data_output, batch_index);
                 nn_accumulate_gradients(batch_gradients, gradients); // add the gradient found for each batch
             }
             nn_scale_gradients(batch_gradients, 1.0f / (float)actual_batch_size); //find the average of the gradients of the batch
             nn_update_parameters(neural_network, batch_gradients, learning_rate); //udpate the neural network based on this batch
         } // continue with the next batch
+        float current_loss = nn_loss(neural_network, training_data_input, training_data_output);
+        printf("Epoch %zu/%zu - Loss: %f\n", epoch, epoch_size, current_loss);
     }
     nn_free(batch_gradients);
     nn_free(gradients);
@@ -215,7 +262,7 @@ void nn_backward(
             MAT_AT(gradients_out.activations[l],j,0) = sum;
         }
         for(size_t i=0; i<gradients_out.activations[l].rows; i++) {
-            MAT_AT(gradients_out.biases[l-1],i,0) = MAT_AT(gradients_out.activations[l],i,0) * MAT_AT(neural_network.activations[l],i,0) * (1 - MAT_AT(neural_network.activations[l],i,0));
+            MAT_AT(gradients_out.biases[l-1],i,0) = MAT_AT(gradients_out.activations[l],i,0) * MAT_AT(neural_network.activations[l],i,0) * (1.0f - MAT_AT(neural_network.activations[l],i,0));
         }
     }
 
