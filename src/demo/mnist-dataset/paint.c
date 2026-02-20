@@ -2,8 +2,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
-#include "../nn_methods.h"
-#include "../nn_math.h"
+#include "../../nn_methods.h"
+#include "../../nn_math.h"
 #define CANVAS_SIZE 280
 #define MNIST_SIZE 28
 #define BRUSH_RADIUS 14.0f
@@ -47,7 +47,7 @@ int NeuralNet_Predict(float input[784], NN neural_network) {
 }
 
 int main(void) {
-    NN neural_network = nn_load_binary("mnist-dataset/trained_mnist_neural_network");
+    NN neural_network = nn_load_binary("trained_mnist_neural_network");
     InitWindow(800, 500, "MNIST Digit Input");
     SetTargetFPS(60);
 

@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
-#include "nn_methods.h"
-#include "nn_math.h"
+#include "../nn_methods.h"
+#include "../nn_math.h"
 
 int main(void) {
     srand(time(0));
