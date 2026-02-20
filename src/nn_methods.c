@@ -77,15 +77,56 @@ void nn_print(const NN neural_network, const char* name) {
     }
 }
 
-/* void nn_fill_rand(NN neural_network) { */
-/*     for (size_t i = 0; i < neural_network.number_of_layers; i++) { */
-/*         mat_fill_rand(neural_network.weights[i]); */
-/*         mat_fill_rand(neural_network.biases[i]); */
-/*     } */
-/*     for (size_t i = 0; i <= neural_network.number_of_layers; i++) { */
-/*         mat_fill_rand(neural_network.activations[i]); */
-/*     } */
-/* } */
+void nn_save_binary(const NN nn, const char* file_name) {
+    FILE *fptr = fopen(file_name, "wb");
+    if (!fptr) {
+        perror("Failed to open file for saving");
+        return;
+    }
+    size_t arch_len = nn.number_of_layers + 1;
+    fwrite(&arch_len, sizeof(size_t), 1, fptr);
+    size_t *architecture = malloc(sizeof(size_t) * arch_len);
+    for (size_t i = 0; i < arch_len; i++) {
+        architecture[i] = nn.activations[i].rows;
+    }
+    fwrite(architecture, sizeof(size_t), arch_len, fptr);
+    free(architecture);
+    for (size_t i = 0; i < nn.number_of_layers; i++) {
+        fwrite(nn.weights[i].elems, sizeof(float), nn.weights[i].rows * nn.weights[i].cols, fptr);
+        fwrite(nn.biases[i].elems, sizeof(float), nn.biases[i].rows * nn.biases[i].cols, fptr);
+    }
+    fclose(fptr);
+}
+
+NN nn_load_binary(const char* file_name) {
+    FILE *fptr = fopen(file_name, "rb");
+    if (!fptr) {
+        perror("Failed to open file for loading");
+        exit(1); 
+    }
+    size_t arch_len;
+    fread(&arch_len, sizeof(size_t), 1, fptr);
+    size_t *architecture = malloc(sizeof(size_t) * arch_len);
+    fread(architecture, sizeof(size_t), arch_len, fptr);
+    NN nn = nn_alloc(architecture, arch_len);
+    free(architecture);
+    for (size_t i = 0; i < nn.number_of_layers; i++) {
+        fread(nn.weights[i].elems, sizeof(float), nn.weights[i].rows * nn.weights[i].cols, fptr);
+        fread(nn.biases[i].elems, sizeof(float), nn.biases[i].rows * nn.biases[i].cols, fptr);
+    }
+    fclose(fptr);
+    return nn;
+}
+
+// void nn_fill_rand(NN neural_network) {
+//     for (size_t i = 0; i < neural_network.number_of_layers; i++) {
+//         mat_fill_rand(neural_network.weights[i]);
+//         mat_fill_rand(neural_network.biases[i]);
+//     }
+//     for (size_t i = 0; i <= neural_network.number_of_layers; i++) {
+//         mat_fill_rand(neural_network.activations[i]);
+//     }
+// }
 
 void nn_fill_rand(NN neural_network) {
     for (size_t i = 0; i < neural_network.number_of_layers; i++) {

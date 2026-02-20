@@ -196,6 +196,24 @@ int main(int argc, char **argv) {
     float accuracy = (float)correct / (float)test_img_count * 100.0f;
     printf("Accuracy: %.2f%% (%zu/%u)\n", accuracy, correct, test_img_count);
 
+    // print the result neural network into a file : 
+    nn_save_binary(neural_network, "trained_mnist_neural_network");
+
+    NN neural_network_2 = nn_load_binary("trained_mnist_neural_network");
+    printf("Testing_2...\n");
+    correct = 0;
+    for (size_t s = 0; s < test_img_count; s++) {
+        mat_copy_col(NN_INPUT(neural_network_2), test_input, s);
+        nn_forward(neural_network_2);
+        size_t predicted = mat_col_argmax(NN_OUTPUT(neural_network_2), 0);
+        size_t actual = test_labels[s];
+        if (predicted == actual) {
+            correct++;
+        }
+    }
+    accuracy = (float)correct / (float)test_img_count * 100.0f;
+    printf("Accuracy: %.2f%% (%zu/%u)\n", accuracy, correct, test_img_count);
+
 
     mat_free(training_input);
     mat_free(training_output);

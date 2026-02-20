@@ -1,19 +1,53 @@
 #include "raylib.h"
 #include <math.h>
+#include <stdio.h>
+#include <assert.h>
+#include "../nn_methods.h"
+#include "../nn_math.h"
 #define CANVAS_SIZE 280
 #define MNIST_SIZE 28
 #define BRUSH_RADIUS 14.0f
 
-int NeuralNet_Predict(float input[784])
-{
-    float sum = 0.0f;
-    for (int i = 0; i < 784; i++) sum += input[i];
-    if (sum < 10.0f) return -1;
-    return (int)fmod(sum, 10);
+size_t mat_col_argmax(MAT m, size_t col) {
+    size_t max_index = 0;
+    float max_value = MAT_AT(m, 0, col);
+    for (size_t i = 1; i < m.rows; i++) {
+        float v = MAT_AT(m, i, col);
+        if (v > max_value) {
+            max_value = v;
+            max_index = i;
+        }
+    }
+    return max_index;
 }
 
-int main(void)
-{
+void print_ascii_image(float input[784]) {
+    for (int y = 0; y < 28; y++) {
+        for (int x = 0; x < 28; x++) {
+            float v = input[y * 28 + x];
+            if (v > 0.8f)      printf("#");
+            else if (v > 0.4f) printf("+");
+            else if (v > 0.1f) printf(".");
+            else               printf(" ");
+        }
+        printf("\n");
+    }
+}
+
+int NeuralNet_Predict(float input[784], NN neural_network) {
+    print_ascii_image(input);
+    MAT test_input = mat_alloc(784, 1);
+    for (size_t i = 0; i < test_input.rows; i++) {
+        MAT_AT(test_input, i, 0) = input[i];
+    }
+    mat_copy_col(NN_INPUT(neural_network), test_input, 0);
+    nn_forward(neural_network);
+    size_t predicted = mat_col_argmax(NN_OUTPUT(neural_network), 0);
+    return (int)predicted;
+}
+
+int main(void) {
+    NN neural_network = nn_load_binary("mnist-dataset/trained_mnist_neural_network");
     InitWindow(800, 500, "MNIST Digit Input");
     SetTargetFPS(60);
 
@@ -35,8 +69,7 @@ int main(void)
 
     float nnInput[784] = {0};
 
-    while (!WindowShouldClose())
-    {
+    while (!WindowShouldClose()) {
         Vector2 mouse = GetMousePosition();
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             if (mouse.x >= 20 && mouse.x <= 20 + CANVAS_SIZE &&
@@ -49,7 +82,7 @@ int main(void)
                     float dist = sqrtf(dx*dx + dy*dy);
                     int steps = (int)(dist / (BRUSH_RADIUS * 0.5f));
                     for (int i = 0; i <= steps; i++) {
-                        float t =  (float)i / steps ;
+                        float t = steps > 0 ? (float)i / steps : 0.0f;
                         Vector2 pos = {
                             prev.x + dx * t,
                             prev.y + dy * t
@@ -86,7 +119,7 @@ int main(void)
         UnloadImageColors(pixels);
         UnloadImage(img);
 
-        if (IsKeyPressed(KEY_ENTER)) predictedDigit = NeuralNet_Predict(nnInput);
+        if (IsKeyPressed(KEY_ENTER)) predictedDigit = NeuralNet_Predict(nnInput, neural_network);
         else if (IsKeyPressed(KEY_SPACE)) {
             BeginTextureMode(drawCanvas);
                 ClearBackground(BLACK);

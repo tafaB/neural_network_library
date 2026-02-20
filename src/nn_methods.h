@@ -15,6 +15,8 @@ typedef struct {
 NN nn_alloc(const size_t *architecture, const size_t arch_len);
 void nn_free(NN neural_network);
 void nn_print(const NN neural_network, const char* name);
+void nn_save_binary(const NN nn, const char* file_name);
+NN nn_load_binary(const char* file_name);
 void nn_fill_rand(NN neural_network);
 void nn_fill_value(NN neural_network, float value);
 void nn_shuffle_training_data(MAT training_data_input, MAT training_data_output);
