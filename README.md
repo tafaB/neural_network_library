@@ -17,15 +17,15 @@ No external libraries, no hidden abstractions—just pointers, matrices, and par
 **Result:** This project was built by studying theory from the following resources:
 
 * **Papers & Books:**
-* [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) – Michael Nielsen
-* [The Math in Neural Networks](https://www.linkedin.com/feed/update/urn:li:activity:7074376524254101504/) – Brooke Joseph
-* [Mathematics of Neural Networks](https://arxiv.org/abs/2403.04807) – Bart M.N. Smets
+    * [Neural Networks and Deep Learning](http://neuralnetworksanddeeplearning.com/) – Michael Nielsen
+    * [The Math in Neural Networks](https://www.linkedin.com/feed/update/urn:li:activity:7074376524254101504/) – Brooke Joseph
+    * [Mathematics of Neural Networks](https://arxiv.org/abs/2403.04807) – Bart M.N. Smets
 
 
 * **Video Series:**
-* [3Blue1Brown Neural Networks Playlist](https://www.3blue1brown.com/topics/neural-networks)
-* [Tsoding Daily NN in C](https://www.youtube.com/watch?v=PGSba51aRYU)
-* [Samson Zhang - NN from Scratch](https://www.youtube.com/watch?v=w8yWXqWQYmU)
+    * [3Blue1Brown Neural Networks Playlist](https://www.3blue1brown.com/topics/neural-networks)
+    * [Tsoding Daily NN in C](https://www.youtube.com/watch?v=PGSba51aRYU)
+    * [Samson Zhang - NN from Scratch](https://www.youtube.com/watch?v=w8yWXqWQYmU)
 
 
 
@@ -61,7 +61,7 @@ src
 
 ![Digit recognizer application using the trined network form previously](nn_readme_demo.gif)
 
-> **Note on Accuracy:** Because this demo uses a simple canvas rather than the exact MNIST preprocessing standard, inputs can be sensitive (e.g., a "9" might be interpreted as an "8" in the video). However, it demonstrates the framework successfully coming to life.
+> **Note:** On top of the missed accuracy, since this demo uses a simple canvas rather than the exact MNIST preprocessing standard, inputs can be sensitive (e.g., the "9" in the video got interpreted as an "8" in the video). However, it demonstrates the framework successfully coming to life.
 
 ---
 
