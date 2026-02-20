@@ -24,8 +24,8 @@ No external libraries, no hidden abstractions—just pointers, matrices, and par
 
 * **Video Series:**
 * [3Blue1Brown Neural Networks Playlist](https://www.3blue1brown.com/topics/neural-networks)
-* [Tsoding Daily NN in C](https://www.google.com/search?q=https://youtu.be/PGSba51aRYU)
-* [Samson Zhang - NN from Scratch](https://www.google.com/search?q=https://youtu.be/w8yWXqWQYmU)
+* [Tsoding Daily NN in C](https://www.youtube.com/watch?v=PGSba51aRYU)
+* [Samson Zhang - NN from Scratch](https://www.youtube.com/watch?v=w8yWXqWQYmU)
 
 
 
@@ -59,7 +59,7 @@ src
 
 **Result:** Created a **"Digit Paint Recognizer"** demo. After training on the MNIST dataset (one of the previous demoss), the model is used in a real-time drawing application to recognize user-drawn digits.
 
-![Digit recognizer application using the trined network form previously](nn_readme_demo.mov)
+![Digit recognizer application using the trined network form previously](nn_readme_demo.gif)
 
 > **Note on Accuracy:** Because this demo uses a simple canvas rather than the exact MNIST preprocessing standard, inputs can be sensitive (e.g., a "9" might be interpreted as an "8" in the video). However, it demonstrates the framework successfully coming to life.
 
